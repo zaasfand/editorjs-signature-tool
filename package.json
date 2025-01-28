@@ -1,0 +1,19 @@
+{
+  "name": "editorjs-signature-tool",
+  "version": "1.0.0",
+  "description": "A custom signature tool for Editor.js",
+  "main": "SignatureTool.js",
+  "scripts": {
+    "test": "run signature",
+    "build": "echo 'Building the project...'"
+  },
+  "keywords": [
+    "signature_pad",
+    "editorjs"
+  ],
+  "author": "Asfand Yar",
+  "license": "MIT",
+  "dependencies": {
+    "signature_pad": "^5.0.4"
+  }
+}
