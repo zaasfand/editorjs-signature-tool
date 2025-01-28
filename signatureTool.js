@@ -1,11 +1,14 @@
 import SignaturePad from 'signature_pad';
 
 class SignatureTool {
-  // Define the toolbox icon and title
+  /**
+   * Defines the toolbox icon and title for the tool.
+   * @returns {object} Toolbox configuration
+   */
   static get toolbox() {
     return {
       title: 'Signature',
-      icon: ` 
+      icon: `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 20c5-5 8 0 12-5s6 0 8-3"/>
           <path d="M12 16l4-4c2-2 4 2 6 0" />
@@ -15,18 +18,27 @@ class SignatureTool {
     };
   }
 
+  /**
+   * Constructor for initializing the tool.
+   * @param {object} param0 The initialization parameters
+   * @param {object} param0.data The initial data
+   * @param {object} param0.config The configuration object
+   * @param {object} param0.api The API object
+   */
   constructor({ data, config, api }) {
-    console.log("🚀 ~ SignatureTool ~ constructor ~ data, api:", data, api)
     this.api = api;
     this.data = data || {};
     this.wrapper = null;
     this.config = config;
     this.signaturePad = null;
     this.penColor = '#000000'; // Default pen color
-    this.isPopupOpen = false; // To track if the popup is open
+    this.isPopupOpen = false; // Tracks if the popup is open
   }
 
-  // Render the tool
+  /**
+   * Renders the tool on the page.
+   * @returns {HTMLElement} The wrapper element containing the tool
+   */
   render() {
     this.wrapper = document.createElement('div');
     this.wrapper.style.padding = '10px';
@@ -36,9 +48,12 @@ class SignatureTool {
     return this.wrapper;
   }
 
+  /**
+   * Renders the editable signature box.
+   */
   renderEditable() {
     const signatureBox = document.createElement('div');
-    signatureBox.style.width = '300px'; // Set box width to 300px
+    signatureBox.style.width = '300px';
     signatureBox.style.height = '70px';
     signatureBox.style.border = '1px solid #ccc';
     signatureBox.style.display = 'flex';
@@ -48,80 +63,44 @@ class SignatureTool {
     signatureBox.style.color = '#aaa';
 
     if (this.data.signature) {
-      // Show the image if a signature exists
-      const img = document.createElement('img');
-      img.src = this.data.signature;
-      img.style.width = '300px'; // Set image width to 300px
-      img.style.height = 'auto';
-      img.style.border = '1px solid #ccc';
-      img.style.cursor = 'pointer';
-      
-      // Make the image clickable to edit the signature
-      img.onclick = () => this.openSignaturePad();
-      this.wrapper.appendChild(img);
+      this._renderSignatureImage(signatureBox);
     } else {
-      // Show placeholder if no signature is added
       signatureBox.textContent = 'Click to sign';
       signatureBox.onclick = () => this.openSignaturePad();
       this.wrapper.appendChild(signatureBox);
     }
   }
 
-  // Open the signature pad in a dropdown-like popup
+  /**
+   * Renders the signature image if it exists in the data.
+   * @param {HTMLElement} signatureBox The signature box element
+   */
+  _renderSignatureImage(signatureBox) {
+    const img = document.createElement('img');
+    img.src = this.data.signature;
+    img.style.width = '300px';
+    img.style.height = 'auto';
+    img.style.border = '1px solid #ccc';
+    img.style.cursor = 'pointer';
+
+    img.onclick = () => this.openSignaturePad();
+    this.wrapper.appendChild(img);
+  }
+
+  /**
+   * Opens the signature pad in a popup to allow the user to draw their signature.
+   */
   openSignaturePad() {
-    if (this.isPopupOpen) return; // Prevent opening popup if it's already open
-  
+    if (this.isPopupOpen) return; // Prevent opening if already open
+
     this.isPopupOpen = true;
-    
-    // Get the position of the signature box
+
     const signatureBoxRect = this.wrapper.getBoundingClientRect();
-  
-    const popup = document.createElement('div');
-    popup.style.position = 'absolute';
-    popup.style.top = `${signatureBoxRect.top - 100}px`; // Position the popup above the box
-    popup.style.left = `${signatureBoxRect.left + (signatureBoxRect.width / 2) - 150}px`; // Center the popup horizontally above the box
-    popup.style.padding = '10px';
-    popup.style.background = '#fff';
-    popup.style.border = '1px solid #ccc';
-    popup.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-    popup.style.zIndex = '1000';
-    
-    // Create canvas for drawing
-    const canvas = document.createElement('canvas');
-    canvas.width = 300; // Set canvas width to 300px
-    canvas.height = 70;
-    canvas.style.border = '1px solid #ccc';
-  
-    // Initialize the signature pad
-    this.signaturePad = new SignaturePad(canvas, {
-      penColor: this.penColor,
-    });
-  
-    // Create a <br> element to add a line break before the button
-    const lineBreak = document.createElement('br');
+    const popup = this._createSignaturePopup(signatureBoxRect);
 
-
-    // Create the insert button
-    const insertButton = document.createElement('button');
-    insertButton.textContent = 'Insert';
-    insertButton.style.marginTop = '10px';
-    insertButton.style.marginleft = '1px';
-    insertButton.style.padding = '5px 10px';
-    insertButton.style.background = '#4CAF50';
-    insertButton.style.border = 'none';
-    insertButton.style.borderRadius = '5px';
-    insertButton.style.color = '#fff';
-    insertButton.style.cursor = 'pointer';
-    insertButton.onclick = () => this.insertSignature(popup);
-  
-    // Add canvas and insert button to the popup
-    popup.appendChild(canvas);
-    popup.appendChild(lineBreak); // Add the line break first
-    popup.appendChild(insertButton);
-  
     // Append the popup to the body
     document.body.appendChild(popup);
-  
+
     // Close the popup when clicking outside
     document.addEventListener('click', (event) => {
       if (!popup.contains(event.target) && !this.wrapper.contains(event.target)) {
@@ -129,41 +108,96 @@ class SignatureTool {
       }
     });
   }
-  
 
-  // Insert the signature into the box
-  insertSignature(popup) {
-    const signatureDataUrl = this.signaturePad.toDataURL();
-    this.data.signature = signatureDataUrl; // Save the signature
-    this.wrapper.textContent = ''; // Clear the placeholder text
-    const img = document.createElement('img');
-    img.src = signatureDataUrl;
-    img.style.width = '300px'; // Set image width to 300px
-    img.style.height = 'auto';
-    img.style.border = '1px solid #ccc';
-    img.style.cursor = 'pointer';
+  /**
+   * Creates the signature pad popup.
+   * @param {DOMRect} signatureBoxRect The bounding rect of the signature box
+   * @returns {HTMLElement} The popup element
+   */
+  _createSignaturePopup(signatureBoxRect) {
+    const popup = document.createElement('div');
+    popup.style.position = 'absolute';
+    popup.style.top = `${signatureBoxRect.top - 100}px`;
+    popup.style.left = `${signatureBoxRect.left + (signatureBoxRect.width / 2) - 150}px`;
+    popup.style.padding = '10px';
+    popup.style.background = '#fff';
+    popup.style.border = '1px solid #ccc';
+    popup.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+    popup.style.zIndex = '1000';
 
-    // Make the inserted signature image clickable to edit it
-    img.onclick = () => this.openSignaturePad();
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 70;
+    canvas.style.border = '1px solid #ccc';
 
-    this.wrapper.appendChild(img); // Insert the signature as an image
-    this.closePopup(popup); // Close the popup
+    this.signaturePad = new SignaturePad(canvas, {
+      penColor: this.penColor,
+    });
+
+    const insertButton = this._createInsertButton(popup);
+
+    popup.appendChild(canvas);
+    popup.appendChild(insertButton);
+
+    return popup;
   }
 
-  // Close the popup
+  /**
+   * Creates the insert button for the signature pad.
+   * @param {HTMLElement} popup The signature pad popup
+   * @returns {HTMLElement} The insert button
+   */
+  _createInsertButton(popup) {
+    const insertButton = document.createElement('button');
+    insertButton.textContent = 'Insert';
+    insertButton.style.marginTop = '10px';
+    insertButton.style.padding = '5px 10px';
+    insertButton.style.background = '#4CAF50';
+    insertButton.style.border = 'none';
+    insertButton.style.borderRadius = '5px';
+    insertButton.style.color = '#fff';
+    insertButton.style.cursor = 'pointer';
+    insertButton.onclick = () => this.insertSignature(popup);
+
+    return insertButton;
+  }
+
+  /**
+   * Inserts the drawn signature into the signature box.
+   * @param {HTMLElement} popup The popup element
+   */
+  insertSignature(popup) {
+    const signatureDataUrl = this.signaturePad.toDataURL();
+    this.data.signature = signatureDataUrl;
+    this.wrapper.textContent = '';
+    this._renderSignatureImage(this.wrapper);
+    this.closePopup(popup);
+  }
+
+  /**
+   * Closes the signature pad popup.
+   * @param {HTMLElement} popup The popup element to close
+   */
   closePopup(popup) {
     document.body.removeChild(popup);
     this.isPopupOpen = false;
   }
 
-  // Save the data
+  /**
+   * Saves the signature data.
+   * @returns {object} The saved signature data
+   */
   save() {
     return {
-      signature: this.data.signature || '', // Save the signature URL
+      signature: this.data.signature || '',
     };
   }
 
-  // Validate the saved data (ensure a signature exists)
+  /**
+   * Validates the saved signature data.
+   * @param {object} savedData The saved data to validate
+   * @returns {boolean} True if the signature exists, false otherwise
+   */
   validate(savedData) {
     return !!savedData.signature && savedData.signature.length > 0;
   }
