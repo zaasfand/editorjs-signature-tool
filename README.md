@@ -18,4 +18,4 @@ To use **SignatureTool** with your Editor.js instance, follow these steps:
 3. Import the tool into your project and configure Editor.js to use it.
 
 ```bash
-git clone https://github.com/zaasfand/signature-tool-editorjs.git
+git clone https://github.com/zaasfand/editorjs-signature-tool.git
